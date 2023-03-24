@@ -11,6 +11,19 @@
 #define N 10
 #define STEPS 1
 
+#ifndef RW_PGM
+#define RW_PGM
+void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, const char *image_name);
+void write_pgm_image(unsigned char *image, const int maxval, const int xsize, const int ysize, const char *image_name);
+#endif
+
+#ifndef INIT
+#define INIT
+unsigned char * initialise_image( int maxval, int xsize, int ysize, int argc, char** argv);
+
+#endif
+
+
 int main( int argc, char **argv )
 {
   int xsize=K, ysize=K, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
@@ -54,12 +67,8 @@ int main( int argc, char **argv )
     }
 
 
-    if(ini_flag==1){
-      ptr=initialise_image( maxval, xsize, ysize, argc, argv);
-      write_pgm_image( ptr,  maxval, xsize, ysize, filename);
-    }
-    MPI_Finalize();
-
+    if(ini_flag==1)
+      ptr=initialise_image( maxval, xsize, ysize, filename, argc, argv);
 
     else if(run_flag==1 && n>=steps){
       read_pgm_image(&ptr, &maxval, &xsize, &ysize, filename);
