@@ -1,4 +1,4 @@
-struct Cell {
+/*struct Cell {
   unsigned char * value;
   unsigned char * neighbors[8];
 };
@@ -95,4 +95,4 @@ void find_neighbors_all_cells(unsigned char *image, struct Cell* grid, const int
       (grid+grid_index)->neighbors[nb_index]=nb[nb_index];
     free(nb);
   }
-}
+}*/

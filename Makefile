@@ -1,14 +1,14 @@
-CC=mpicc -O3 -march=native
-CFLAGS= -c -I include
+CC=mpicc -O3 -march=native -g
 OBJECTS=main.o $(patsubst src/%.c, obj/%.o, $(wildcard src/*.c))
 
 main.x: $(OBJECTS)
-	$(CC) $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 main.o: main.c
-	$(CC) $(CFLAGS) $^
-	obj/%.o: src/%.c
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) -c $^
+
+obj/%.o: src/%.c
+	$(CC) -c $^ -o $@
 clean:
 	rm -rf *.o *.x
 	rm -rf obj/*.o

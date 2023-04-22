@@ -19,14 +19,14 @@ void write_pgm_image(unsigned char *image, const int maxval, const int xsize, co
 
 #ifndef INIT
 #define INIT
-unsigned char * initialise_image( int maxval, int xsize, int ysize, int argc, char** argv);
+unsigned char * initialise_image( int maxval, int xsize, int ysize, char* filename, int argc, char** argv);
 
 #endif
 
 
 int main( int argc, char **argv )
 {
-  int xsize=K, ysize=K, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
+  int xsize=K, ysize=K, maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
   char* filename=NULL;
   unsigned char* ptr=NULL;
   opterr=0;
@@ -40,7 +40,7 @@ int main( int argc, char **argv )
       run_flag = 1;
       break;
     case 'k':
-      xsize=strtoul(optarg, NULL, 10);
+      xsize=atoi(optarg);
       ysize=xsize;
       break;
     case 'e':
@@ -67,9 +67,10 @@ int main( int argc, char **argv )
     }
 
 
-    if(ini_flag==1)
-      ptr=initialise_image( maxval, xsize, ysize, filename, argc, argv);
-
+    if(ini_flag==1){
+	    //printf("xsize: %d\n",xsize);
+	    ptr=initialise_image( maxval, xsize, ysize, filename, argc, argv);
+    }/*
     else if(run_flag==1 && n>=steps){
       read_pgm_image(&ptr, &maxval, &xsize, &ysize, filename);
       struct Cell* grid = calloc(xsize*ysize, sizeof(struct Cell));
@@ -78,7 +79,7 @@ int main( int argc, char **argv )
       free(grid);
     }
 
-
+*/
     //write_pgm_image( ptr,  maxval, xsize, ysize, "check.pgm", ini_flag, run_flag);
 
 
