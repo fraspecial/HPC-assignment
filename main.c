@@ -11,15 +11,10 @@
 #define N 10
 #define STEPS 1
 
-#ifndef RW_PGM
-#define RW_PGM
-void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, const char *image_name);
-void write_pgm_image(unsigned char *image, const int maxval, const int xsize, const int ysize, const char *image_name);
-#endif
 
 #ifndef INIT
 #define INIT
-unsigned char * initialise_image( int maxval, int xsize, int ysize, char* filename, int argc, char** argv);
+void initialise_image( int maxval, int xsize, int ysize, char* filename, int argc, char** argv);
 
 #endif
 
@@ -28,7 +23,6 @@ int main( int argc, char **argv )
 {
   int xsize=K, ysize=K, maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
   char* filename=NULL;
-  unsigned char* ptr=NULL;
   opterr=0;
 
   while ((opt = getopt (argc, argv, ":irk:e:f:n:s:")) != -1)
@@ -69,7 +63,8 @@ int main( int argc, char **argv )
 
     if(ini_flag==1){
 	    //printf("xsize: %d\n",xsize);
-	    ptr=initialise_image( maxval, xsize, ysize, filename, argc, argv);
+	    remove(filename);
+	    initialise_image( maxval, xsize, ysize, filename, argc, argv);
     }/*
     else if(run_flag==1 && n>=steps){
       read_pgm_image(&ptr, &maxval, &xsize, &ysize, filename);
@@ -85,7 +80,6 @@ int main( int argc, char **argv )
 
     //if(run_flag==1)
 
-    free(ptr);
 
     // ---------------------------------------------------
     //
@@ -122,5 +116,6 @@ int main( int argc, char **argv )
 
     free(ptr);
     */
+    
     return 0;
   }
