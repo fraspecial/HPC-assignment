@@ -14,14 +14,13 @@
 
 #ifndef INIT
 #define INIT
-void initialise_image( int maxval, int xsize, int ysize, char* filename, int argc, char** argv);
-
+void initialise_image(const unsigned int maxval, const unsigned int xsize, const unsigned int ysize, const char* filename, int* argc, char** argv[]);
 #endif
 
 
 int main( int argc, char **argv )
 {
-  int xsize=K, ysize=K, maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
+  unsigned int xsize=K, ysize=K, maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
   char* filename=NULL;
   opterr=0;
 
@@ -64,7 +63,7 @@ int main( int argc, char **argv )
     if(ini_flag==1){
 	    //printf("xsize: %d\n",xsize);
 	    remove(filename);
-	    initialise_image( maxval, xsize, ysize, filename, argc, argv);
+	    initialise_image( maxval, xsize, ysize, filename,&argc, &argv);
     }/*
     else if(run_flag==1 && n>=steps){
       read_pgm_image(&ptr, &maxval, &xsize, &ysize, filename);

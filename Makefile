@@ -1,4 +1,4 @@
-CC=mpicc -O3 -march=native -g
+CC=mpicc -O3 -march=native -ggdb3
 OBJECTS=main.o $(patsubst src/%.c, obj/%.o, $(wildcard src/*.c))
 
 main.x: $(OBJECTS)
