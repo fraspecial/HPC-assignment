@@ -2,17 +2,12 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-
-#ifndef CHECK_ERR(func)
-#define CHECK_ERR(func) { \
-    if (err != MPI_SUCCESS) { \
-        int errorStringLen; \
-        char errorString[MPI_MAX_ERROR_STRING]; \
-        MPI_Error_string(err, errorString, &errorStringLen); \
-        printf("Error at line %d: calling %s (%s)\n",__LINE__, #func, errorString); \
-    } \
+void write_header(const char* filename, const char * header){
+  FILE* f;
+  f = fopen(filename, "w");
+  fprintf(f, header);
+  fclose(f);
 }
-#endif
 
 void write_pgm_image(const char *image_name, unsigned char* local_buffer,char * header, unsigned short int header_size, unsigned int rank, unsigned int buffer_size, const unsigned int rest)
 /*
@@ -28,25 +23,18 @@ void write_pgm_image(const char *image_name, unsigned char* local_buffer,char * 
   MPI_Status* status;
   MPI_Request* req;
   MPI_Offset disp=(header_size+1)+(rank*buffer_size) + rest*(rank + 1 > rest);
- 
+
   MPI_File_open(MPI_COMM_WORLD, image_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-  
-  if(rank==0){
-	  MPI_File_write_at(fh, 0, header, header_size, MPI_CHAR, status);
-	  //CHECK_ERR(MPI_File_write_at);
-  }
+
   MPI_File_set_view(fh, disp, MPI_CHAR, MPI_CHAR, "native", MPI_INFO_NULL);
   //CHECK_ERR(MPI_File_set_view);
-
-
-
-MPI_File_write_all(fh, local_buffer, buffer_size, MPI_CHAR,status);
+  MPI_File_write_all(fh, local_buffer, buffer_size, MPI_CHAR,status);
  //CHECK_ERR(MPI_File_write_all);
   printf("Processor %d wrote %d bytes\n", rank, buffer_size);
-  
+
   MPI_File_close(&fh);
 
-  
+
     // Writing header
     // The header's format is as follows, all in ASCII.
     // "whitespace" is either a blank or a TAB or a CF or a LF
@@ -63,7 +51,7 @@ MPI_File_write_all(fh, local_buffer, buffer_size, MPI_CHAR,status);
     // larger than 255, then 2 bytes will be needed for each pixel
     //
     // Writing file
-    
+
 }
 
 

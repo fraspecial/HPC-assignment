@@ -7,6 +7,7 @@
 
 #ifndef WRITE
 #define WRITE
+void write_header(const char* filename, const char* header);
 void write_pgm_image(const char *image, unsigned char* buf, char* header, unsigned short int header_size,unsigned int rank, unsigned int buf_size, const unsigned int rest);
 #endif
 
@@ -39,7 +40,12 @@ void initialise_image(const unsigned int maxval,const unsigned int xsize,const u
     local_buffer[i] = maxval*round((double)rand()/(double)RAND_MAX);
     //printf("Processor %d iteration %d = %d\n",rank, i, local_buffer[i]);
   }
-  write_pgm_image(image_name, local_buffer, header, header_length, rank, buffer_size, rest);
+
+  if(rank==0){
+    write_header(image_name, header);
+  }
+
+  write_pgm_image(image_name, local_buffer, header_length, rank, buffer_size, rest);
   free(local_buffer);
   free(header);
   MPI_Finalize();
