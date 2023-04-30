@@ -17,6 +17,12 @@
 void initialise_image(const unsigned int maxval, const unsigned int xsize, const unsigned int ysize, const char* filename, int* argc, char** argv[]);
 #endif
 
+#ifndef READ
+#define READ
+
+void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, const char *image_name, int * argc, char ** argv[])
+#endif
+
 
 int main( int argc, char **argv )
 {
@@ -64,16 +70,13 @@ int main( int argc, char **argv )
 	    //printf("xsize: %d\n",xsize);
 	    remove(filename);
 	    initialise_image( maxval, xsize, ysize, filename,&argc, &argv);
-    }/*
-    else if(run_flag==1 && n>=steps){
-      read_pgm_image(&ptr, &maxval, &xsize, &ysize, filename);
-      struct Cell* grid = calloc(xsize*ysize, sizeof(struct Cell));
-      find_neighbors_all_cells(ptr, grid, xsize, ysize);
-      evolve(grid,maxval, xsize, ysize,n,steps);
-      free(grid);
     }
-
-*/
+    if(run_flag==1 && n>=steps){
+      read_pgm_image(&submatrix, &maxval, &xsize, &ysize, filename, &argc, &argv);
+      //find_neighbors_all_cells(ptr, grid, xsize, ysize);
+      //evolve(grid,maxval, xsize, ysize,n,steps);
+      //free(grid);
+    }
     //write_pgm_image( ptr,  maxval, xsize, ysize, "check.pgm", ini_flag, run_flag);
 
 
@@ -115,6 +118,6 @@ int main( int argc, char **argv )
 
     free(ptr);
     */
-    
+
     return 0;
   }
