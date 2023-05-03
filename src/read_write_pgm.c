@@ -1,23 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <string.h>
 
-void write_header(const char* filename, const char * header){
-  FILE* f;
-  f = fopen(filename, "w");
-  fprintf(f, header);
-  fclose(f);
-}
 
-unsigned int set_parameters(unsigned int size, unsigned int procs, unsigned int rank ,unsigned int* rest, unsigned int* buffer_size, unsigned int* disp){
+unsigned int write_header(const char* filename, const unsigned int xsize, const unsigned int ysize, const unsigned int maxval, const char magic[2]);
 
-  *rest= size % procs;
-  *buffer_size = size/procs+( rank < *rest);
-  //printf("hello from proc %d/%d\n", rank, procs);
-  *disp=(rank * *buffer_size) + *rest * (rank + 1 > *rest);
-}
+void set_parameters(unsigned int size, unsigned int procs, unsigned int rank ,unsigned int* rest, unsigned int* buffer_size, MPI_Offset* disp);
 
-void write_pgm_image(const char *image_name, const unsigned char* local_buffer, const unsigned int rank, const unsigned int buffer_size, const unsigned int offset)
+void write_pgm_image(const char *image_name, const unsigned char* local_buffer, const unsigned int rank, const unsigned int buffer_size, MPI_Offset offset)
 /*
 * image        : a pointer to the memory region that contains the image
 * maxval       : either 255 or 65536
@@ -37,8 +28,10 @@ void write_pgm_image(const char *image_name, const unsigned char* local_buffer, 
   //CHECK_ERR(MPI_File_set_view);
   MPI_File_write_all(fh, local_buffer, buffer_size, MPI_CHAR,&status);
  //CHECK_ERR(MPI_File_write_all);
-  printf("Processor %d wrote %d bytes\n", rank, buffer_size);
-
+  for (int i = 0; i < buffer_size; i++){
+  
+  printf("Processor %u: byte %u=%u\n", rank, offset+i, local_buffer[i]);
+  }
   MPI_File_close(&fh);
 
 
@@ -62,7 +55,7 @@ void write_pgm_image(const char *image_name, const unsigned char* local_buffer, 
 }
 
 
-void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, const char *image_name, int * argc, char ** argv[])
+void read_pgm_image(unsigned char **image,  unsigned int* xsize, unsigned int* ysize, unsigned int* maxval, const char* image_name, int * argc, char ** argv[]){
 /*
 * image        : a pointer to the pointer that will contain the image
 * maxval       : a pointer to the int that will store the maximum intensity in the image
@@ -70,41 +63,52 @@ void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, 
 * image_name   : the name of the file to be read
 *
 */
-{
-  unsigned int procs, rank, buffer_size, mpi_provided_thread_level;
-  unsigned int size= *xsize * *ysize * color_depth;;
-  MPI_Init(NULL,NULL);
-  if(rank==0){
+	
+  unsigned int size, procs, rank, rest, color_depth, mpi_provided_thread_level;
+  
+  MPI_Offset initial_offset=0;
+  MPI_Init(argc,argv);
+  
+  char MagicN[3];
+  MPI_Comm_size(MPI_COMM_WORLD, &procs);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  unsigned int buffer_size;
+  MPI_Offset proc_offset=0;
+ if(rank==0){
     FILE* image_file;
-    char    MagicN[2];
     char   *line = NULL;
     size_t  k, n = 0;
-    unsigned int color_depth=1+(*maxval>255);
 
+    color_depth=1+(*maxval>255);
     image_file = fopen(image_name, "r");
 
     *image = NULL;
     *xsize = *ysize = *maxval = 0;
 
     // get the Magic Number
-    k = fscanf(image_file, "%2s%*c", MagicN );
-    offset+=k;
+    if(fscanf(image_file, "%2s%*c", MagicN ) >0){
+	    initial_offset=initial_offset+1+strlen(MagicN);
+    }
+    printf("Offset dopo magic number: %u\n",initial_offset);
     // skip all the comments
     k = getline( &line, &n, image_file);
-    offset+=k;
-
+    initial_offset+=k;
+    
+    printf("Offset dopo seconda riga: %u\n",initial_offset);
     while ( (k > 0) && (line[0]=='#') ){
       k = getline( &line, &n, image_file);
-      offset+=k;
+      initial_offset+=k;
     }
+
     if (k > 0)
     {
       k = sscanf(line, "%d%*c%d%*c%d%*c", xsize, ysize, maxval);
       if ( k < 3 ){
         k=getline( &line, &n, image_file);
-        offset+=k;
-      }
+        initial_offset+=k;
+     }
       sscanf(line, "%d%*c", maxval);
+      size= *xsize * *ysize * (1 + *maxval>255);
     }
 
     else
@@ -116,16 +120,20 @@ void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, 
     }
     fclose(image_file);
     free( line );
-    printf("offset:%s\n", offset);
+    printf("Header length: %d\n", initial_offset);
   }
-
-  MPI_Comm_size(MPI_COMM_WORLD, &procs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  MPI_Bcast(&initial_offset, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&size, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
   MPI_File fh;
-  MPI_Offset offset;
   MPI_Status status;
-  set_parameters(size,procs,rank, &rest,&buffer_size, &offset);
-  if ( (*image = (unsigned char*)malloc( buffer_size )) == NULL )
+  rest = size % procs;
+  set_parameters(size,procs,rank, &rest,&buffer_size, &proc_offset);
+  proc_offset+=initial_offset;
+
+  printf("Proc. %u ; proc_offset: %u\n", rank, proc_offset);
+  
+  if  ((*image = (unsigned char*)malloc(buffer_size*sizeof(unsigned char))) == NULL )
   {
 
     *maxval = -2;         // this is the signal that memory was insufficient
@@ -134,12 +142,20 @@ void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, 
     return;
   }
   MPI_File_open(MPI_COMM_WORLD, image_name, MPI_MODE_RDONLY,MPI_INFO_NULL, &fh);
-  MPI_File_set_view(fh, offset, MPI_CHAR, MPI_CHAR, "native", MPI_INFO_NULL);
+  MPI_File_set_view(fh, proc_offset, MPI_CHAR, MPI_CHAR, "native", MPI_INFO_NULL);
   MPI_File_read_all(fh, *image, buffer_size, MPI_CHAR, &status);
-  MPI_File_close(&fh)
-  MPI_File_open(MPI_COMM_WORLD, "Nuova.pgm", MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL, &fh);
-  MPI_File_set_view(fh, offset, MPI_CHAR, MPI_CHAR, "native", MPI_INFO_NULL);
-  MPI_File_write_all(fh, *image, buffer_size, MPI_CHAR, &status);
   MPI_File_close(&fh);
+  for(int i=0; i<buffer_size;i++){
+	  printf("Processo %u ha letto byte %u valore %u\n", rank, proc_offset+i, (*image)[i]);
+  }
+  
+  if(rank==0){
+	  printf("sizeof MagicN=%u, strlen MagicN=%u\n", sizeof(MagicN),strlen(MagicN));
+	  printf("MagicN[0]=%c, MagicN[1]=%c, MagicN[2]=%c, MagicN[3]=%c\n", MagicN[0],MagicN[1],MagicN[2], MagicN[3]);
+	  unsigned int hed=write_header("Nuovissima.pgm", *xsize, *ysize, *maxval, MagicN);
+	  printf("Verità %u offset %u soggetivo %u\n", hed, initial_offset, proc_offset-initial_offset);
+  }
+  write_pgm_image("Nuovissima.pgm", *image, rank, buffer_size, proc_offset);
+  MPI_Finalize();
   return;
 }

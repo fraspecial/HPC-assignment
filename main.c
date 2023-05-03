@@ -20,13 +20,14 @@ void initialise_image(const unsigned int maxval, const unsigned int xsize, const
 #ifndef READ
 #define READ
 
-void read_pgm_image(unsigned char **image, int *maxval, int *xsize, int *ysize, const char *image_name, int * argc, char ** argv[])
+void read_pgm_image(unsigned char **image, unsigned int* xisize, unsigned int* ysize, unsigned int* maxval, const char *image_name, int * argc, char ** argv[]);
 #endif
 
 
 int main( int argc, char **argv )
 {
   unsigned int xsize=K, ysize=K, maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
+  unsigned char* ptr;
   char* filename=NULL;
   opterr=0;
 
@@ -72,7 +73,8 @@ int main( int argc, char **argv )
 	    initialise_image( maxval, xsize, ysize, filename,&argc, &argv);
     }
     if(run_flag==1 && n>=steps){
-      read_pgm_image(&submatrix, &maxval, &xsize, &ysize, filename, &argc, &argv);
+	    remove("Nuovissima.pgm");
+	    read_pgm_image(&ptr, &xsize, &ysize, &maxval, filename, &argc, &argv);
       //find_neighbors_all_cells(ptr, grid, xsize, ysize);
       //evolve(grid,maxval, xsize, ysize,n,steps);
       //free(grid);

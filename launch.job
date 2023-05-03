@@ -1,0 +1,14 @@
+#!/bin/bash
+# Name of the job
+#SBATCH -J ex_1
+#SBATCH --nodes 1
+#SBATCH --ntasks-per-node 5
+# Partition to use - FHPC
+#SBATCH -p EPYC
+# Time limit. Often not needed as there are defaults, 
+# but you might have to specify it to get the maximum allowed.
+# time: 30 seconds  
+#SBATCH --time=2:30 
+make clean; make;
+mpirun ./main.x -r -k 4 -n 5 -s 1 -f prova.pgm
+
