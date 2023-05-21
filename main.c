@@ -14,19 +14,25 @@
 
 #ifndef INIT
 #define INIT
-void initialise_image(const unsigned int maxval, const unsigned int xsize, const unsigned int ysize, const char* filename, int* argc, char** argv[]);
+void initialise_image(const unsigned int maxval, const unsigned long rows, const unsigned long cols, const char* filename, int* argc, char** argv[]);
 #endif
 
 #ifndef READ
 #define READ
 
-void read_pgm_image(unsigned char **image, unsigned int* xisize, unsigned int* ysize, unsigned int* maxval, const char *image_name, int * argc, char ** argv[]);
+void read_pgm_image(unsigned char **image, unsigned long* xisize, unsigned long* cols, unsigned int* maxval, const char *image_name, int * argc, char ** argv[]);
+#endif
+
+#ifndef EVOLVE
+#define EVOLVE
+void evolve_static(unsigned char** ptr, const char* filename, const unsigned long* rows, const unsigned long * cols, const unsigned int* maxval, int* argc, char** argv[]);
 #endif
 
 
 int main( int argc, char **argv )
 {
-  unsigned int xsize=K, ysize=K, maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
+  unsigned long rows=K, cols=K;
+  unsigned int maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
   unsigned char* ptr;
   char* filename=NULL;
   opterr=0;
@@ -39,9 +45,11 @@ int main( int argc, char **argv )
     case 'r':
       run_flag = 1;
       break;
-    case 'k':
-      xsize=atoi(optarg);
-      ysize=xsize;
+    case 'x':
+      rows=strtoul(optarg, NULL, 10);
+      break;
+    case 'y':
+      cols=strtoul(optarg, NULL, 10);
       break;
     case 'e':
       evo=strtoul(optarg, NULL, 2);
@@ -68,18 +76,17 @@ int main( int argc, char **argv )
 
 
     if(ini_flag==1){
-	    //printf("xsize: %d\n",xsize);
+	    //printf("rows: %d\n",rows);
 	    remove(filename);
-	    initialise_image( maxval, xsize, ysize, filename,&argc, &argv);
+	    initialise_image( maxval, rows, cols, filename,&argc, &argv);
     }
     if(run_flag==1 && n>=steps){
-	    remove("Nuovissima.pgm");
-	    read_pgm_image(&ptr, &xsize, &ysize, &maxval, filename, &argc, &argv);
-      //find_neighbors_all_cells(ptr, grid, xsize, ysize);
-      //evolve(grid,maxval, xsize, ysize,n,steps);
+      evolve_static(&ptr, filename, &rows, &cols, &maxval, &argc, &argv);
+      //find_neighbors_all_cells(ptr, grid, rows, cols);
+      //evolve(grid,maxval, rows, cols,n,steps);
       //free(grid);
     }
-    //write_pgm_image( ptr,  maxval, xsize, ysize, "check.pgm", ini_flag, run_flag);
+    //write_pgm_image( ptr,  maxval, rows, cols, "check.pgm", ini_flag, run_flag);
 
 
     //if(run_flag==1)
@@ -89,22 +96,22 @@ int main( int argc, char **argv )
     //
 
     /*
-    xsize = 0;
-    ysize = 0;
+    rows = 0;
+    cols = 0;
     maxval = 0;
 
-    read_pgm_image( &ptr, &maxval, &xsize, &ysize, "image.pgm");
+    read_pgm_image( &ptr, &maxval, &rows, &cols, "image.pgm");
     printf("The gradient has been read in again\n");
 
     free( ptr );
 
-    read_pgm_image( &ptr, &maxval, &xsize, &ysize, "check_me.pgm");
+    read_pgm_image( &ptr, &maxval, &rows, &cols, "check_me.pgm");
     printf("The imaget has been read\n");
 
     // swap the endianism
     //
     if ( I_M_LITTLE_ENDIAN )
-    swap_image( ptr, xsize, ysize, maxval);
+    swap_image( ptr, rows, cols, maxval);
 
     // do something on the image (for instance, blur it)
     // ...
@@ -113,9 +120,9 @@ int main( int argc, char **argv )
     // swap the endianism
     //
     if ( I_M_LITTLE_ENDIAN )
-    swap_image( ptr, xsize, ysize, maxval);
+    swap_image( ptr, rows, cols, maxval);
 
-    write_pgm_image( ptr, maxval, xsize, ysize, "check_me.back.pgm");
+    write_pgm_image( ptr, maxval, rows, cols, "check_me.back.pgm");
     printf("The imaget has been written back\n");
 
     free(ptr);
