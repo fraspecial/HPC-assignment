@@ -14,7 +14,7 @@
 
 #ifndef INIT
 #define INIT
-void initialise_image(const unsigned int maxval, const unsigned long rows, const unsigned long cols, const char* filename, int* argc, char** argv[]);
+void initialize_image(const unsigned long rows, const unsigned long cols, const unsigned int maxval, const char* filename, int* argc, char** argv[]);
 #endif
 
 #ifndef READ
@@ -23,15 +23,16 @@ void initialise_image(const unsigned int maxval, const unsigned long rows, const
 void read_pgm_image(unsigned char **image, unsigned long* xisize, unsigned long* cols, unsigned int* maxval, const char *image_name, int * argc, char ** argv[]);
 #endif
 
+
 #ifndef EVOLVE
 #define EVOLVE
-void evolve_static(unsigned char** ptr, const char* filename, const unsigned long* rows, const unsigned long * cols, const unsigned int* maxval, int* argc, char** argv[]);
+void evolve_static(unsigned char** ptr, const unsigned int rows, const unsigned int cols, const unsigned int maxval, const char* filename, int* argc, char** argv[]);
 #endif
 
 
 int main( int argc, char **argv )
 {
-  unsigned long rows=K, cols=K;
+  unsigned int rows=K, cols=K;
   unsigned int maxval=MAXVAL, n=10, steps=STEPS, evo=EVO, ini_flag=0, run_flag=0, opt;
   unsigned char* ptr;
   char* filename=NULL;
@@ -45,11 +46,9 @@ int main( int argc, char **argv )
     case 'r':
       run_flag = 1;
       break;
-    case 'x':
+    case 'k':
       rows=strtoul(optarg, NULL, 10);
-      break;
-    case 'y':
-      cols=strtoul(optarg, NULL, 10);
+      cols=rows;
       break;
     case 'e':
       evo=strtoul(optarg, NULL, 2);
@@ -78,10 +77,10 @@ int main( int argc, char **argv )
     if(ini_flag==1){
 	    //printf("rows: %d\n",rows);
 	    remove(filename);
-	    initialise_image( maxval, rows, cols, filename,&argc, &argv);
+	    initialize_image(rows, cols, maxval, filename,&argc, &argv);
     }
     if(run_flag==1 && n>=steps){
-      evolve_static(&ptr, filename, &rows, &cols, &maxval, &argc, &argv);
+      evolve_static(&ptr, rows, cols, maxval, filename, &argc, &argv);
       //find_neighbors_all_cells(ptr, grid, rows, cols);
       //evolve(grid,maxval, rows, cols,n,steps);
       //free(grid);
