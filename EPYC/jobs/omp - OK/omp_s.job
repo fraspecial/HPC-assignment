@@ -1,0 +1,84 @@
+#!/bin/bash
+# Name of the job
+#SBATCH --no-requeue
+#SBATCH --job-name="openMP_scal"
+#SBATCH --partition=EPYC
+#SBATCH -N 3
+#SBATCH -n 384
+#SBATCH --exclusive
+#SBATCH --time=02:00:00
+#SBATCH --output="./jobs/omp_s.out"
+
+
+
+echo LOADING MODULES...
+echo
+module load openMPI/4.1.5/gnu/12.2.1
+
+echo SETTING THREADS AFFINITY POLICY...
+echo
+alloc=close
+export OMP_PLACES=cores
+export OMP_PROC_BIND=$alloc
+
+echo COMPILING EXECUTABLES...
+echo
+datafolder=$(pwd)
+#make clean; make;
+
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+echo
+
+node=EPYC
+scal=openMP
+n_gen=50
+n_procs=6
+
+
+echo CREATING/OVERWRITING CSV FILE...
+echo
+datafile=$datafolder/data.csv
+echo "#,,," > ${datafile}
+echo "#node:,${node},," >> $datafile
+echo "#scalability:,${scal},," >> $datafile
+echo "#performance_measure:,time(s),," >> $datafile
+echo "#threads_affinity_policy:,${alloc},," >> $datafile
+echo "#playground_x_size:,${mat_x_size},," >> $datafile
+echo "#playground_y_size:,${mat_y_size},," >> $datafile
+echo "#generations:,${n_gen},," >> $datafile
+echo "#sockets:,2,," >> $datafile
+echo "#,,," >> $datafile
+echo "#,,," >> $datafile
+echo "threads_per_socket,ordered,static,static_in_place" >> $datafile
+
+
+echo PERFORMING MEASURES...
+echo
+
+### generating random playground
+export OMP_NUM_THREADS=64
+#mpirun ./main.x -i -k 25000 -f conway.pgm
+echo ${OMP_NUM_THREADS}
+
+mkdir -p evos
+mkdir -p res
+
+
+for times in $(seq 1 1 4)   
+do
+    for n_threads in $(seq 1 1 64) 
+    do    
+    ### running the evolution
+        export OMP_NUM_THREADS=$n_threads
+        echo ${times} ${OMP_NUM_THREADS}
+        mpirun -np $n_procs --map-by node --bind-to socket ./main.x -r -n $n_gen -e 1 -s 0 -f conway.pgm -o "./res/omp.csv"
+        echo -----------
+    done 
+done
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
