@@ -1,0 +1,123 @@
+LOADING MODULES...
+
+SETTING THREADS AFFINITY POLICY...
+
+COMPILING EXECUTABLES...
+
+mpicc -fopenmp -O3 -march=native -g -c src/init.c -o obj/init.o
+mpicc -fopenmp -O3 -march=native -g -c src/read_write_pgm.c -o obj/read_write_pgm.o
+mpicc -fopenmp -O3 -march=native -g -c src/static.c -o obj/static.o
+mpicc -fopenmp -O3 -march=native -g main.o obj/init.o obj/ordered.o obj/read_write_pgm.o obj/static.o -o main.x -lm
+
+-------------------------------------------------------------
+-------------------------------------------------------------
+
+PERFORMING MEASURES...
+
+rm -rf *.o *.x
+rm -rf obj/*.o
+mpicc -fopenmp -O3 -march=native -g -c main.c
+mpicc -fopenmp -O3 -march=native -g -c src/init.c -o obj/init.o
+mpicc -fopenmp -O3 -march=native -g -c src/ordered.c -o obj/ordered.o
+mpicc -fopenmp -O3 -march=native -g -c src/read_write_pgm.c -o obj/read_write_pgm.o
+mpicc -fopenmp -O3 -march=native -g -c src/static.c -o obj/static.o
+mpicc -fopenmp -O3 -march=native -g main.o obj/init.o obj/ordered.o obj/read_write_pgm.o obj/static.o -o main.x -lm
+10000
+conway_weak_10000.pgm
+1 1
+-----------
+20000
+conway_weak_20000.pgm
+1 2
+-----------
+30000
+conway_weak_30000.pgm
+1 3
+-----------
+40000
+conway_weak_40000.pgm
+1 4
+-----------
+50000
+conway_weak_50000.pgm
+1 5
+-----------
+60000
+conway_weak_60000.pgm
+1 6
+-----------
+10000
+conway_weak_10000.pgm
+2 1
+-----------
+20000
+conway_weak_20000.pgm
+2 2
+-----------
+30000
+conway_weak_30000.pgm
+2 3
+-----------
+40000
+conway_weak_40000.pgm
+2 4
+-----------
+50000
+conway_weak_50000.pgm
+2 5
+-----------
+60000
+conway_weak_60000.pgm
+2 6
+-----------
+10000
+conway_weak_10000.pgm
+3 1
+-----------
+20000
+conway_weak_20000.pgm
+3 2
+-----------
+30000
+conway_weak_30000.pgm
+3 3
+-----------
+40000
+conway_weak_40000.pgm
+3 4
+-----------
+50000
+conway_weak_50000.pgm
+3 5
+-----------
+60000
+conway_weak_60000.pgm
+3 6
+-----------
+10000
+conway_weak_10000.pgm
+4 1
+-----------
+20000
+conway_weak_20000.pgm
+4 2
+-----------
+30000
+conway_weak_30000.pgm
+4 3
+-----------
+40000
+conway_weak_40000.pgm
+4 4
+-----------
+50000
+conway_weak_50000.pgm
+4 5
+-----------
+60000
+conway_weak_60000.pgm
+4 6
+-----------
+
+-------------------------------------------------------------
+-------------------------------------------------------------
