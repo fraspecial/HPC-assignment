@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-//#include <omp.h>
 #include <string.h>
 
 void read_header(unsigned char *image, const char* image_name, unsigned int *rows, unsigned int *cols, unsigned int* maxval,  MPI_Offset * initial_offset);
@@ -36,19 +35,10 @@ void evolve_ordered(unsigned int evolutions, unsigned int steps, unsigned char* 
   
   MPI_Comm cart_comm=initialize_procs(rows, &procs, &cart_rank, &proc_above, &proc_below, coords);
   
-    if (cart_rank!=MPI_UNDEFINED){
-      if(procs > 1){
-      MPI_Bcast(&initial_offset, 1, MPI_UNSIGNED_LONG, 0, cart_comm);
-      MPI_Bcast(&rows, 1, MPI_UNSIGNED, 0, cart_comm);
-      MPI_Bcast(&cols, 1, MPI_UNSIGNED, 0, cart_comm);
-        //printf("hello from proc %d/%d. Coords[%d,%d]. Rank_above %d and rank_below %d\n", cart_rank, procs-1, coords[0], coords[1], proc_above, proc_below);
+  if (cart_rank!=MPI_UNDEFINED){
+    if(procs > 1){
       ptr = (unsigned char *)malloc((cols+2)*rows+sizeof(unsigned char));
       ptr = read_pgm_image(&cart_comm, &(ptr[cols]), filename, initial_offset, maxval, &rows, &cols, &rest, &buffer_size, procs, cart_rank);
-        //unsigned char * evo = malloc(2*cols+buffer_size);
-
-
-        //printf("Processo %d, coordinate [%d,%d]\n", cart_rank, coords[0], coords[1]);
-	//	#pragma omp parallel
 
       MPI_Isend(&(ptr[cols]), cols, MPI_UNSIGNED_CHAR, proc_above, 1, cart_comm, &req);
       MPI_Recv(&(ptr[cols + buffer_size]), cols, MPI_UNSIGNED_CHAR, proc_below, 1 , cart_comm, &status);
@@ -65,6 +55,7 @@ void evolve_ordered(unsigned int evolutions, unsigned int steps, unsigned char* 
         
         for(int j=cols; j < cols+buffer_size; j++)
 		      ptr[j]=compute_neighbor(j, ptr, cols, *maxval);
+        
         if(i < evolutions -1 || cart_rank == 0)
           MPI_Isend(&(ptr[cols]), cols, MPI_UNSIGNED_CHAR, proc_above, 1, cart_comm, &req);
 
@@ -84,43 +75,33 @@ void evolve_ordered(unsigned int evolutions, unsigned int steps, unsigned char* 
       MPI_Reduce(&duration, &global, 1, MPI_DOUBLE, MPI_MAX, 0, cart_comm);
     }
   	
-
-	  //write_csv(procs, omp_get_max_threads(), cols, evolutions, global, output_file);
   else{
     ptr = read_pgm_image(&cart_comm, ptr, filename, initial_offset, maxval, &rows, &cols, &rest, &buffer_size, procs, cart_rank);
-
-    //unsigned char * evo = malloc(2*cols+buffer_size);
     
     for(int i=0; i < evolutions; i++){
-      //#pragma omp parallel for schedule(static)
-      	  for(int j=cols; j < cols+buffer_size; j++){
-            if(j==cols){
-              for (int k=0; k<cols; k++){
-                ptr[k]=ptr[buffer_size+k];
-              }
-            }
-            if(j==buffer_size){
-              for (int k=0; k<cols; k++){
-                ptr[cols+buffer_size+k]=ptr[cols+k];
-              }
-            } 
-		        ptr[j]=compute_neighbor(j, ptr, cols, *maxval);
+      for(int j=cols; j < cols+buffer_size; j++){
+        if(j==cols){
+          for (int k=0; k<cols; k++){
+            ptr[k]=ptr[buffer_size+k];
           }
-          if(steps > 0)
-            if(i%steps==0){
-              sprintf(evo_title, "./evos/evo_%d_of_%u.pgm", i+1, evolutions);
-              write_pgm_image(&cart_comm,evo_title, &(ptr[cols]), procs, cart_rank, rows, cols, *maxval); 
-            }
-          //unsigned char * temp = evo;
-          //evo = ptr;
-          //ptr = temp;
+        }
+        if(j==buffer_size){
+          for (int k=0; k<cols; k++){
+            ptr[cols+buffer_size+k]=ptr[cols+k];
+          }
+        } 
+		    ptr[j]=compute_neighbor(j, ptr, cols, *maxval);
+      }
+      if(steps > 0)
+        if(i%steps==0){
+          sprintf(evo_title, "./evos/evo_%d_of_%u.pgm", i+1, evolutions);
+          write_pgm_image(&cart_comm,evo_title, &(ptr[cols]), procs, cart_rank, rows, cols, *maxval); 
+        }
     }
-    //free(evo);
     global=MPI_Wtime()-t_start;
   }
 
   if(cart_rank==0)
-	  //printf("%lf\n", global);
     write_csv(procs, 1, cols, evolutions, global, output_file);
   }
   MPI_Finalize();

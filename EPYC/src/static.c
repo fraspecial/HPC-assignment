@@ -48,9 +48,6 @@ void evolve_static(unsigned int evolutions, unsigned int steps, unsigned char* p
 
   if (cart_rank!=MPI_UNDEFINED){
     if(procs > 1){
-      MPI_Bcast(&initial_offset, 1, MPI_UNSIGNED_LONG, 0, cart_comm);
-      MPI_Bcast(&rows, 1, MPI_UNSIGNED, 0, cart_comm);
-      MPI_Bcast(&cols, 1, MPI_UNSIGNED, 0, cart_comm);
       ptr = read_pgm_image(&cart_comm, ptr, filename, initial_offset, maxval, &rows, &cols, &rest, &buffer_size, procs, cart_rank);
       unsigned char * evo = malloc(2*cols+buffer_size);
 
@@ -83,6 +80,7 @@ void evolve_static(unsigned int evolutions, unsigned int steps, unsigned char* p
     unsigned char * evo = malloc(2*cols+buffer_size);
 
     for(int i=0; i < evolutions; i++){
+    #pragma omp parallel for schedule(static)
       for (int k=0; k<cols; k++){
         ptr[k]=ptr[buffer_size+k];
         ptr[cols+buffer_size+k]=ptr[cols+k];

@@ -2,49 +2,22 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <string.h>
+#include <math.h>
+#define SEED 435423
 
 
 
-unsigned int write_header(const char* filename, const unsigned int rows, const unsigned int cols, const unsigned int maxval, const char magic[2]);
+MPI_Comm initialize_procs(const int rows, int* my_procs, int* my_rank, int* rank_above, int* rank_below, int coords[2]);
 void set_parameters(unsigned int rows, unsigned int cols, unsigned int procs, unsigned int rank, unsigned int* rest, unsigned int* buffer_size, MPI_Offset* disp);
 
-void write_pgm_image(const MPI_Comm* comm, const char *image_name, unsigned char* local_buffer, const unsigned int procs, const unsigned int rank, const unsigned int rows, const unsigned int cols, const unsigned int maxval)
-/*
-* image        : a pointer to the memory region that contains the image
-* maxval       : either 255 or 65536
-* rows, cols : x and y dimensions of the image
-* image_name   : the name of the file to be written
-*
-*/
-{
-  int err;
-  MPI_File fh;
-  MPI_Offset offset;
-  MPI_Status status;
-  MPI_Request req;
-  unsigned int buffer_size, header_length, rest;
-
-  if(rank==0){
-      //printf("RAND MAX IS %d\n", RAND_MAX);
-      header_length=write_header(image_name, rows, cols, maxval, "P5");
-      //printf("Header ha lunghezza %u\n", header_length);
-    }
+unsigned int write_header(const char* filename, const unsigned long rows, const unsigned long cols, const unsigned int maxval, const char* magic){
+	FILE* f;
+    unsigned long length=0;
     
-  MPI_Bcast(&header_length,1,MPI_UNSIGNED,0,*comm);
-    
-    //printf("Ricevuto header length processo %d: %u\n", my_rank, header_length);
-  set_parameters(rows, cols, procs, rank , &rest, &buffer_size, &offset);
-  offset=offset+header_length;
-    //printf("Proc %d. Header length: %u; rest: %u; buffer_size:%u; proc_offset: %lld\n", my_rank, header_length, rest, buffer_size, disp);
-    
-    
-    
-  MPI_File_open(*comm, image_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-  MPI_File_set_view(fh, offset, MPI_CHAR, MPI_CHAR, "native", MPI_INFO_NULL);
-  //CHECK_ERR(MPI_File_set_view);
-  MPI_File_write(fh, local_buffer, buffer_size, MPI_CHAR,&status);
- //CHECK_ERR(MPI_File_write_all);
-  MPI_File_close(&fh);
+    f=fopen(filename, "w");
+    length=fprintf(f, "%s\n%lu %lu\n%u\n",magic, cols, rows, maxval);
+    fclose(f);
+    return length;
 }
 
 void read_header(unsigned char *image, const char* image_name, unsigned int *rows, unsigned int *cols, unsigned int* maxval, MPI_Offset* initial_offset){
@@ -96,6 +69,29 @@ void read_header(unsigned char *image, const char* image_name, unsigned int *row
     return;
 }
 
+void write_pgm_image(const MPI_Comm* comm, const char *image_name, unsigned char* local_buffer, const unsigned int procs, const unsigned int rank, const unsigned int rows, const unsigned int cols, const unsigned int maxval){
+  
+  int err;
+  MPI_File fh;
+  MPI_Offset offset;
+  MPI_Status status;
+  MPI_Request req;
+  unsigned int buffer_size, header_length, rest;
+
+  if(rank==0){
+      header_length=write_header(image_name, rows, cols, maxval, "P5");
+    }
+    
+  MPI_Bcast(&header_length,1,MPI_UNSIGNED,0,*comm);
+  set_parameters(rows, cols, procs, rank , &rest, &buffer_size, &offset);
+  offset=offset+header_length;
+  
+  MPI_File_open(*comm, image_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+  MPI_File_set_view(fh, offset, MPI_CHAR, MPI_CHAR, "native", MPI_INFO_NULL);
+  MPI_File_write(fh, local_buffer, buffer_size, MPI_CHAR,&status);
+  MPI_File_close(&fh);
+}
+
 unsigned char * read_pgm_image(MPI_Comm* my_world, unsigned char *image, const char* image_name, MPI_Offset initial_offset, int* maxval, unsigned int *rows, unsigned int *cols, unsigned int* rest, unsigned int* buffer_size, int procs, int rank){
   
   
@@ -104,7 +100,6 @@ unsigned char * read_pgm_image(MPI_Comm* my_world, unsigned char *image, const c
   unsigned int size;
   MPI_Offset proc_offset=0;
   
-  //printf("P%d RICEVE %u rows e %u columns\n", rank, *rows, *cols);
   size=(*rows) * (*cols);
   set_parameters(*rows, *cols, procs,rank, rest, buffer_size, &proc_offset);
   proc_offset+= initial_offset;
@@ -137,4 +132,31 @@ void write_csv(int size, int nthreads, unsigned int dim, int n, double global, c
 
   return;
 
+}
+
+
+void initialize_image(const unsigned int rows,const unsigned int cols, const unsigned int* maxval, const char* image_name, int* argc, char** argv[]){
+  int coords[2];
+  int mpi_provided_thread_level, my_rank, my_procs, rank_above, rank_below, rest, buffer_size;
+  
+  MPI_Offset disp;
+  MPI_Init(argc, argv);
+  MPI_Comm my_world=initialize_procs(rows, &my_procs, &my_rank, &rank_above, &rank_below, coords);
+  unsigned int seed = SEED *my_rank + my_procs;
+  if(my_rank!=MPI_UNDEFINED){
+    srand(seed);
+    rest = rows % my_procs;
+    buffer_size = cols * (rows/my_procs+( my_rank < rest));
+    unsigned char* local_buffer =(unsigned char*)malloc(buffer_size*sizeof(unsigned char) );
+    
+    #pragma omp parallel for schedule(static)
+    for ( int i = 0; i < buffer_size; i++ )
+      local_buffer[i] = *maxval*round((double)rand()/(double)RAND_MAX);
+   
+
+    write_pgm_image(&my_world, image_name, local_buffer, my_procs, my_rank, rows, cols, *maxval);
+    free(local_buffer);
+  }
+  
+  MPI_Finalize();
 }

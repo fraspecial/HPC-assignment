@@ -11,17 +11,8 @@
 #define N 10
 #define STEPS 1
 
-
-#ifndef INIT
-#define INIT
 void initialize_image(const unsigned long rows, const unsigned long cols, const unsigned int* maxval, const char* filename, int* argc, char** argv[]);
-#endif
-
-#ifndef EVOLVE
-#define EVOLVE
 void evolve_static(unsigned int evos, unsigned int step, unsigned char* ptr, const unsigned int rows, const unsigned int cols, const unsigned int* maxval, const char* filename, const char* output, int* argc, char** argv[]);
-#endif
-
 void evolve_ordered(unsigned int evolutions, unsigned int steps, unsigned char* ptr, unsigned int rows, unsigned int cols, unsigned int* maxval, const char* filename, const char* output_file, int* argc, char** argv[]);
 
 
