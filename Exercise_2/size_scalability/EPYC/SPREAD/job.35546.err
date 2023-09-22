@@ -1,0 +1,16 @@
+Lmod Warning: The architecture selection module has been deprecated. The
+module system will now autonomously handle the proper selection of binaries. 
+While processing the following module(s):
+    Module fullname   Module Filename
+    ---------------   ---------------
+    architecture/AMD  /orfeo/opt/modules/profiles/architecture/AMD.lua
+
+Loading mkl version 2022.2.1
+Loading tbb version 2021.7.1
+Loading compiler-rt version 2022.2.1
+Removing mkl version 2022.2.1
+Use `module list` to view any remaining dependent modules.
+Removing compiler-rt version 2022.2.1
+Use `module list` to view any remaining dependent modules.
+Removing tbb version 2021.7.1
+Use `module list` to view any remaining dependent modules.
