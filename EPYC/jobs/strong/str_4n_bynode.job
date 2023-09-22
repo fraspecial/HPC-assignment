@@ -1,0 +1,60 @@
+#!/bin/bash
+# Name of the job
+#SBATCH --no-requeue
+#SBATCH --job-name="str_4bn"
+#SBATCH --partition=EPYC
+#SBATCH -N 4
+#SBATCH --ntasks-per-socket 64
+#SBATCH --exclusive
+#SBATCH --time=02:00:00
+#SBATCH --output="./jobs/strong/str_4nodes_bynode.out"
+
+
+
+echo LOADING MODULES...
+echo
+module load openMPI/4.1.5/gnu/12.2.1
+
+echo SETTING THREADS AFFINITY POLICY...
+echo
+alloc=close
+export OMP_NUM_THREADS=64
+export OMP_PLACES=cores
+export OMP_PROC_BIND=$alloc
+
+echo COMPILING EXECUTABLES...
+echo
+
+cd ..
+make clean; make;
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+echo
+
+n_gen=50
+
+echo PERFORMING MEASURES...
+echo
+
+### generating random playground
+
+mkdir -p evos
+
+cd EPYC 
+mkdir -p res
+
+for times in $(seq 1 1 4)
+do
+    for n_procs in $(seq 1 1 8)
+    do    
+        ### running the evolution
+        echo "Try ${times} with ${n_procs} processes."
+        mpirun -np $n_procs --map-by node --bind-to socket  ../main.x -r -e 1 -n $n_gen -s 0 -f ../conway.pgm -o "./res/strong/str_4n_bynode.csv"
+        echo -----------
+    done 
+done
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
