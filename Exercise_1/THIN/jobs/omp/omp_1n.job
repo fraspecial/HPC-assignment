@@ -1,0 +1,68 @@
+#!/bin/bash
+# Name of the job
+#SBATCH --no-requeue
+#SBATCH --job-name="omp_1n"
+#SBATCH --partition=THIN
+#SBATCH -N 1
+#SBATCH -n 24
+#SBATCH --ntasks-per-socket 12
+#SBATCH --nodelist thin004
+#SBATCH --exclusive
+#SBATCH --time=02:00:00
+#SBATCH --output="./jobs/omp/omp_1node.out"
+
+
+
+echo LOADING MODULES...
+echo
+module load openMPI/4.1.5/gnu/12.2.1
+
+echo SETTING THREADS AFFINITY POLICY...
+echo
+
+export OMP_PLACES=cores
+export OMP_PROC_BIND=close
+
+cd ..
+echo COMPILING EXECUTABLES...
+make clean; make;
+echo
+
+
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+echo
+
+n_gen=50
+
+cd THIN
+echo PERFORMING MEASURES...
+echo
+
+### generating random playground
+
+#mpirun ./main.x -i -k 25000 -f conway.pgm
+
+mkdir -p evos
+mkdir -p res
+#make;
+
+
+for times in $(seq 1 1 4)   
+do
+    for n_threads in $(seq 1 1 12) 
+    do    
+    ### running the evolution
+        export OMP_NUM_THREADS=$n_threads
+        echo Try ${times} with ${OMP_NUM_THREADS} threads
+        mpirun -np 2 --map-by socket --report-bindings ../main.x -r -e 1 -n $n_gen -s 0 -f ../conway.pgm -o "./res/omp_1node.csv"
+        echo -----------
+    done 
+done
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+module purge

@@ -1,0 +1,30 @@
+#!/bin/bash
+# Name of the job
+#SBATCH --no-requeue
+#SBATCH --job-name="evolve"
+#SBATCH --partition=EPYC
+#SBATCH -N 1
+#SBATCH --ntasks-per-node 128
+#SBATCH --exclusive
+#SBATCH --time=10:00
+#SBATCH --output="./evolve_image.out"
+
+echo LOADING MODULES...
+echo
+module load openMPI/4.1.5/gnu/12.2.1
+
+echo COMPILING EXECUTABLES...
+make clean; make;
+echo -------------------------------------------------------------
+
+file="conway.pgm"
+output="runtime.csv"
+evo=1
+n=3
+step=1
+
+mkdir -p evos
+echo EVOLVING IMAGE...
+mpirun ./main.x -r -e ${evo} -n ${n} -s ${step} -f ${file} -o ${output}
+
+echo IMAGE EVOLVED

@@ -1,0 +1,73 @@
+#!/bin/bash
+# Name of the job
+#SBATCH --no-requeue
+#SBATCH --job-name="we_4n"
+#SBATCH --partition=THIN
+#SBATCH --nodelist thin[004,005,007,008]
+#SBATCH --ntasks-per-socket 12
+#SBATCH --exclusive
+#SBATCH --time=20:00
+#SBATCH --output="./jobs/weak/weak_4n.out"
+
+
+
+echo LOADING MODULES...
+echo
+module load openMPI/4.1.5/gnu/12.2.1
+
+echo SETTING THREADS AFFINITY POLICY...
+echo
+
+export OMP_NUM_THREADS=12
+export OMP_PLACES=cores
+export OMP_PROC_BIND=close
+
+
+cd ..
+echo COMPILING EXECUTABLES...
+echo
+
+
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+echo
+
+
+
+echo
+
+### generating random playground
+
+cd THIN
+mkdir -p evos
+mkdir -p res
+
+
+for nprocs in $(seq 1 1 8)
+do
+    x=$((10000*$nprocs))
+    echo Creating conway_${x}.pgm
+    mpirun --map-by node --bind-to socket ../main.x -i -x $x -y 10000 -f conway_${x}.pgm
+done
+
+echo PERFORMING MEASURES...
+
+n_gen=50
+
+for times in $(seq 1 1 4)   
+do
+    ### running the evolution
+    for nprocs in $(seq 1 1 8)
+    do
+        x=$((10000*$nprocs))
+        mpirun -np $nprocs --map-by node --bind-to socket ../main.x -r -e 1 -n $n_gen -s 0 -f conway_${x}.pgm -o "./res/weak_4nodes.csv"
+        echo -----------
+    done
+done
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+module purge
