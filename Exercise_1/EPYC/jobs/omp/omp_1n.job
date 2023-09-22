@@ -1,0 +1,63 @@
+#!/bin/bash
+# Name of the job
+#SBATCH --no-requeue
+#SBATCH --job-name="omp_1n"
+#SBATCH --partition=EPYC
+#SBATCH -N 1
+#SBATCH -n 128
+#SBATCH --ntasks-per-socket 64
+#SBATCH --exclusive
+#SBATCH --time=2:00:00
+#SBATCH --output="./jobs/omp/omp_1node.out"
+
+
+
+echo LOADING MODULES...
+echo
+module load openMPI/4.1.5/gnu/12.2.1
+
+echo SETTING THREADS AFFINITY POLICY...
+echo
+alloc=close
+export OMP_PLACES=cores
+export OMP_PROC_BIND=$alloc
+
+
+
+echo COMPILING EXECUTABLES...
+echo
+
+cd ..
+make clean; make;
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+echo
+
+n_gen=50
+n_procs=2
+
+echo PERFORMING MEASURES...
+echo
+
+cd EPYC
+mkdir -p evos
+mkdir -p res
+
+for times in $(seq 1 1 4)   
+do
+    for n_threads in $(seq 1 1 64) 
+    do    
+    ### running the evolution
+        export OMP_NUM_THREADS=$n_threads
+        echo Try ${times} with ${OMP_NUM_THREADS} threads
+        mpirun -np $n_procs --map-by socket ../main.x -r -n $n_gen -e 1 -s 0 -f ../conway.pgm -o "./res/omp_1node.csv"
+        echo -----------
+    done 
+done
+
+echo
+echo -------------------------------------------------------------
+echo -------------------------------------------------------------
+module purge
