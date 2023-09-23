@@ -2,24 +2,24 @@
 ## What you will find in this folder
 This folder contains all the source files of the hybrid MPI+OpenMP program which implements Conway's game of life and the bash scripts used to test its correctness and scalability.
 List of the contents:
-* src/: a folder containing the following source files:
-    * init.c: used to initialize MPI parallel region and decompose the domain.
-    * read_write.c: read and write functions used for the playground and to record performance.
-    * static.c: implements static evolution.
-    * ordered.c: implements ordered evolution.
+* `src/`: a folder containing the following source files:
+    * `init.c`: used to initialize MPI parallel region and decompose the domain.
+    * `read_write.c`: read and write functions used for the playground and to record performance.
+    * `static.c`: implements static evolution.
+    * `ordered.c`: implements ordered evolution.
 
-* obj/: folder created to host the objects files when the code is compiled
+* `obj/`: folder created to host the objects files when the code is compiled.
 
-* Makefile: used to compile the source code
+* `Makefile:` used to compile the source code.
 
-* EPYC: contains all the jobs performed to test scaling on EPYC nodes of Orfeo cluster. Jobs are divided in the subfolders:
-    * omp: contains the scripts for OpenMP scaling test of static evolution on 1 socket, 1 node and 2 nodes saturated with threads.
-    * strong: contains the scripts for strong MPI scaling of static evolution on 3 nodes with processes mapped by core, and 4 nodes with processes mapped by node and bound to socket. Furthermore it contains also a strong MPi scaling test on ordered evolution.
-    * weak: contains the scripts for weak scalability on 4 nodes with processes mapped by node and bound to socket.
-* THIN: it has all the jobs performed to test scaling on THIN nodes of Orfeo cluster. The structure of the subdirectories and the filenames are the same of those on EPYC nodes.
+* `EPYC`: contains all the jobs performed to test scaling on EPYC nodes of Orfeo cluster. Jobs are divided in the subfolders:
+    * `omp`: contains the scripts for OpenMP scaling test of static evolution on 1 socket, 1 node and 2 nodes saturated with threads.
+    * `strong`: contains the scripts for strong MPI scaling of static evolution on 3 nodes with processes mapped by core, and 4 nodes with processes mapped by node and bound to socket. Furthermore it contains also a strong MPi scaling test on ordered evolution.
+    * `weak`: contains the scripts for weak scalability on 4 nodes with processes mapped by node and bound to socket.
+* `THIN`: it has all the jobs performed to test scaling on THIN nodes of Orfeo cluster. The structure of the subdirectories and the filenames are the same of those on EPYC nodes.
 
-* create_image.job: bash script that calls the initialization of the playground.
-* evo_image.job: bash script that calls the evolution of the playground.
+* `create_image.job`: bash script that calls the initialization of the playground.
+* `evo_image.job`: bash script that calls the evolution of the playground.
 
 ## Compiling the code and running the scripts.
 To compile the code just execute `make` from the home folder of this repository.
