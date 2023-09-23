@@ -1,0 +1,21 @@
+LOADING MODULES...
+
+SETTING THREADS AFFINITY POLICY...
+
+COMPILING EXECUTABLES...
+rm -rf *.o *.x
+rm -rf obj/*.o
+mpicc -fopenmp -O3 -march=native -g -c main.c
+mpicc -fopenmp -O3 -march=native -g -c src/init.c -o obj/init.o
+mpicc -fopenmp -O3 -march=native -g -c src/ordered.c -o obj/ordered.o
+mpicc -fopenmp -O3 -march=native -g -c src/read_write.c -o obj/read_write.o
+mpicc -fopenmp -O3 -march=native -g -c src/static.c -o obj/static.o
+mpicc -fopenmp -O3 -march=native -g main.o obj/init.o obj/ordered.o obj/read_write.o obj/static.o -o main.x -lm
+
+
+-------------------------------------------------------------
+-------------------------------------------------------------
+
+PERFORMING MEASURES...
+
+slurmstepd: error: *** JOB 42729 ON epyc001 CANCELLED AT 2023-09-22T23:17:56 ***

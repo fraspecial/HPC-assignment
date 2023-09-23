@@ -17,7 +17,12 @@ echo COMPILING EXECUTABLES...
 make clean; make;
 echo -------------------------------------------------------------
 
+k=25000
+filename=conway.pgm
+x=1
+y=1
+
 echo CREATING IMAGE...
-mpirun ./main.x -i -k 25000 -f conway.pgm
+mpirun ./main.x -i -k $k -f $filename
 
 echo IMAGE CREATED
